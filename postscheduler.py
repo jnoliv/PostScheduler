@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
+import time
+import sched
+#import sqlite
 import configparser
 
+from discord_webhook import DiscordWebhook
 
 try:
 	import twitter
@@ -27,20 +31,45 @@ def setupTwitterAPI(config):
 	try:
 		twitterAPI.VerifyCredentials()
 	except twitter.error.TwitterError as e:
-		print('Could not verify twitter credentials:\n' + e)
+		print('Invalid Twitter credentials:\n' + e)
 		return None
 
 	return twitterAPI
 
 
+def setupDiscordWebhook(config):
+	""""""
+	if 'Discord' not in config:
+		return None
+
+	return config['Discord']['webhook']
+
+
+def post(twitterAPI, discordWebhookURL, message):
+	print('[' + time.ctime() + '] Posting...')
+
+	if twitterAPI is not None:
+		twitterAPI.PostUpdate(message)
+
+	if discordWebhookURL is not None:
+		resp = DiscordWebhook(url=discordWebhookURL, content=message).execute()
+		print(resp)
+
 
 def main():
+	scheduler = sched.scheduler(time.time, time.sleep)
+
 	config = configparser.ConfigParser()
 	config.read('postscheduler.conf')
 
 	twitterAPI = setupTwitterAPI(config)
+	discordWebhookURL = setupDiscordWebhook(config)
 
-	twitterAPI.PostUpdate('Hello, I am a test tweet!')
+	message = 'Test123'
+
+	scheduler.enterabs(time.time() + 2, 1, post, argument=(twitterAPI, discordWebhookURL, message))
+
+	scheduler.run()
 
 
 if __name__ == '__main__':
