@@ -1,2 +1,5 @@
 # Contains oauth keys
 postscheduler.conf
+
+# Databases with scheduled posts
+*.db
